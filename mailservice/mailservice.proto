@@ -1,0 +1,19 @@
+syntax = "proto3";
+package mailservice;
+
+service MailService {
+  //put an email request an email
+  rpc PutEmail (EmailRequest) returns (EmailResponse) {}
+}
+
+//EmailRequest - email request definition
+message EmailRequest {
+   string sender = 1;
+   string receiver = 2;
+   string title = 3;
+}
+
+//EmailResponse - email response definition
+message EmailResponse {
+  bool status = 1;
+}
