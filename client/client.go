@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	pb "github.com/supunz/go-job-queue/mailservice"
+	pb "github.com/supunz/go-job-queue/mail"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -19,17 +19,22 @@ func main() {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewMailServiceClient(conn)
+
+	//creating new mail client
+	c := pb.NewMailClient(conn)
 
 	// Contact the server and print out its response.
-	name := "defaultName"
+	name := "name"
 	receiver := "receiver"
 	title := "title"
+	content := "content goes here"
 
-	response, err := c.PutEmail(context.Background(), &pb.EmailRequest{Sender: &name, Receiver: &receiver, Title: &title})
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
-		return
+	for i := 0; i < 10000; i++ {
+		response, err := c.PutEmail(context.Background(), &pb.EmailRequest{Sender: name, Receiver: receiver, Title: title, Content: content})
+		if err != nil {
+			log.Fatalf("could not put email on server due to : %v", err)
+			return
+		}
+		log.Printf("response status was %v", response.Status)
 	}
-	log.Printf("it was a %s", response.Status)
 }

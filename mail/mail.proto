@@ -1,7 +1,7 @@
 syntax = "proto3";
-package mailservice;
+package mail;
 
-service MailService {
+service Mail {
   //put an email request an email
   rpc PutEmail (EmailRequest) returns (EmailResponse) {}
 }
@@ -11,6 +11,7 @@ message EmailRequest {
    string sender = 1;
    string receiver = 2;
    string title = 3;
+   string content = 4;
 }
 
 //EmailResponse - email response definition
