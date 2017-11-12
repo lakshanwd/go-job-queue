@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
-	"time"
 
 	pb "github.com/supunz/go-job-queue/mail"
 	"golang.org/x/net/context"
@@ -21,60 +19,27 @@ const (
 	MaxWorkerCount = 20
 )
 
-var queue chan Email
+var queue chan *pb.EmailRequest
 
 // server is used to implement mail.MailServer.
 type server struct {
 }
 
-//Email - email
-type Email struct {
-	Sender   string
-	Receiver string
-	Title    string
-	Content  string
-}
-
-func (e *Email) send(workerID int) {
-	time.Sleep(time.Millisecond * 100)
-	fmt.Println("email send by worker#", workerID)
-}
-
-type worker struct {
-	ID int
-}
-
-func newWorker(id int) *worker {
-	return &worker{ID: id}
-}
-
-func (w *worker) start() {
-	go func() {
-		for {
-			select {
-			case email := <-queue:
-				email.send(w.ID)
-			}
-		}
-	}()
-}
-
 // PutEmail implements mail.PutEmail
 func (s *server) PutEmail(ctx context.Context, in *pb.EmailRequest) (*pb.EmailResponse, error) {
-	email := Email{Sender: in.GetSender(), Receiver: in.GetReceiver(), Title: in.GetTitle(), Content: in.GetContent()}
-	queue <- email
+	queue <- in
+	defer log.Printf("email received %v\n", in.GetTitle())
 	return &pb.EmailResponse{Status: true}, nil
+}
+
+func (s *server) GetEmail(ctx context.Context, in *pb.Worker) (*pb.EmailRequest, error) {
+	defer log.Printf("email taken by %v\n", in.GetWorkerName())
+	return <-queue, nil
 }
 
 func main() {
 	//create channel for queuing email requests
-	queue = make(chan Email, MaxQueueSize)
-
-	//define maximum workers
-	for i := 0; i < MaxWorkerCount; i++ {
-		worker := newWorker(i)
-		worker.start()
-	}
+	queue = make(chan *pb.EmailRequest, MaxQueueSize)
 
 	//listen to tcp
 	lis, err := net.Listen("tcp", Port)

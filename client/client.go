@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	pb "github.com/supunz/go-job-queue/mail"
@@ -26,11 +27,11 @@ func main() {
 	// Contact the server and print out its response.
 	name := "name"
 	receiver := "receiver"
-	title := "title"
 	content := "content goes here"
 
-	for i := 0; i < 10000; i++ {
-		response, err := c.PutEmail(context.Background(), &pb.EmailRequest{Sender: name, Receiver: receiver, Title: title, Content: content})
+	for i := 0; i < 50000; i++ {
+		email := &pb.EmailRequest{Sender: name, Receiver: receiver, Title: fmt.Sprintf("title %v", i), Content: content}
+		response, err := c.PutEmail(context.Background(), email)
 		if err != nil {
 			log.Fatalf("could not put email on server due to : %v", err)
 			return

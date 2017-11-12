@@ -2,8 +2,11 @@ syntax = "proto3";
 package mail;
 
 service Mail {
-  //put an email request an email
+  //PutEmail - put an email request an email
   rpc PutEmail (EmailRequest) returns (EmailResponse) {}
+
+  //GetEmail - get email from server
+  rpc GetEmail(Worker) returns (EmailRequest) {}
 }
 
 //EmailRequest - email request definition
@@ -17,4 +20,9 @@ message EmailRequest {
 //EmailResponse - email response definition
 message EmailResponse {
   bool status = 1;
+}
+
+//Worker - worker who gets the email request
+message Worker{
+ string workerName = 1;
 }
