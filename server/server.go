@@ -23,7 +23,7 @@ const (
 
 var queue chan Email
 
-// server is used to implement helloworld.GreeterServer.
+// server is used to implement mail.MailServer.
 type server struct {
 }
 
@@ -87,7 +87,7 @@ func main() {
 	pb.RegisterMailServer(s, &server{})
 
 	// Register reflection service on gRPC server.
-	log.Println("Server starting...")
+	log.Println("starting server...")
 	reflection.Register(s)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
