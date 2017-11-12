@@ -29,7 +29,7 @@ func main() {
 	receiver := "receiver"
 	content := "content goes here"
 
-	for i := 0; i < 50000; i++ {
+	for i := 0; i < 8000; i++ {
 		email := &pb.EmailRequest{Sender: name, Receiver: receiver, Title: fmt.Sprintf("title %v", i), Content: content}
 		response, err := c.PutEmail(context.Background(), email)
 		if err != nil {
