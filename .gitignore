@@ -4,9 +4,6 @@
 *.so
 *.dylib
 
-#generated grpc files
-*.pb.go
-
 # Test binary, build with `go test -c`
 *.test
 
