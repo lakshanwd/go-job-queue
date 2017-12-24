@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -10,16 +12,21 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	address        = "localhost:50051"
-	maxDeamonCount = 20
-	maxQueueSize   = 1000
-)
+var address string
+var maxDeamonCount int
+var maxQueueSize int
 
 var queue chan *pb.EmailRequest
 var quit chan bool
 var start chan bool
 var mailClient chan pb.MailClient
+
+//config for worker
+type workerConfig struct {
+	Address        string `json:"address"`
+	MaxDeamonCount int    `json:"max-deamon-count"`
+	MaxQueueSize   int    `json:"max-queue-size"`
+}
 
 type deamon struct {
 	ID int
@@ -46,6 +53,13 @@ func send(e *pb.EmailRequest, deamonID int) {
 }
 
 func main() {
+	//setup configuration
+	config := loadConfiguration()
+	address = config.Address
+	maxDeamonCount = config.MaxDeamonCount
+	maxQueueSize = config.MaxQueueSize
+
+	//initialize channels
 	queue = make(chan *pb.EmailRequest, maxQueueSize)
 	quit = make(chan bool)
 	start = make(chan bool)
@@ -99,4 +113,17 @@ func main() {
 		//retry connection in 3 seconds
 		time.Sleep(time.Second * 3)
 	}
+}
+
+func loadConfiguration() workerConfig {
+	file := "./config.json"
+	var config workerConfig
+	configFile, err := os.Open(file)
+	defer configFile.Close()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	jsonParser := json.NewDecoder(configFile)
+	jsonParser.Decode(&config)
+	return config
 }

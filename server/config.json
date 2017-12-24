@@ -1,0 +1,5 @@
+{
+  "port": 50051,
+  "max-worker-count": 20,
+  "max-queue-size": 1000
+}

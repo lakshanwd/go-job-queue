@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"net"
+	"os"
 
 	pb "github.com/supunz/go-job-queue/mail"
 	"golang.org/x/net/context"
@@ -11,15 +14,22 @@ import (
 )
 
 //Port - port to Listen
+var Port string
+
 //MaxQueueSize - max size of queue
+var MaxQueueSize int
+
 //MaxWorkerCount - max count of workers
-const (
-	Port           = ":50051"
-	MaxQueueSize   = 10000
-	MaxWorkerCount = 20
-)
+var MaxWorkerCount int
 
 var queue chan *pb.EmailRequest
+
+//config for server
+type serverConfig struct {
+	Port           int `json:"port"`
+	MaxWorkerCount int `json:"max-worker-count"`
+	MaxQueueSize   int `json:"max-queue-size"`
+}
 
 // server is used to implement mail.MailServer.
 type server struct {
@@ -38,6 +48,12 @@ func (s *server) GetEmail(ctx context.Context, in *pb.Worker) (*pb.EmailRequest,
 }
 
 func main() {
+	//setup configuration
+	config := loadConfiguration()
+	Port = fmt.Sprintf(":%d", config.Port)
+	MaxQueueSize = config.MaxQueueSize
+	MaxWorkerCount = config.MaxWorkerCount
+
 	//create channel for queuing email requests
 	queue = make(chan *pb.EmailRequest, MaxQueueSize)
 
@@ -57,4 +73,17 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+}
+
+func loadConfiguration() serverConfig {
+	file := "./config.json"
+	var config serverConfig
+	configFile, err := os.Open(file)
+	defer configFile.Close()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	jsonParser := json.NewDecoder(configFile)
+	jsonParser.Decode(&config)
+	return config
 }
