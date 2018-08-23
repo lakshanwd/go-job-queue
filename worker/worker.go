@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	pb "github.com/supunz/go-job-queue/mail"
+	pb "../mail"
 	"google.golang.org/grpc"
 )
 

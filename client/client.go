@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	pb "github.com/supunz/go-job-queue/mail"
+	pb "../mail"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
