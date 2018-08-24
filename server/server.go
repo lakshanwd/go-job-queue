@@ -7,7 +7,7 @@ import (
 	"net"
 	"os"
 
-	pb "../mail"
+	pb "github.com/lakshanwd/go-job-queue/mail"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
