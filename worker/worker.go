@@ -40,7 +40,10 @@ func (w *deamon) start() {
 	go func() {
 		for {
 			select {
-			case email := <-queue:
+			case email, ok := <-queue:
+				if !ok {
+					return
+				}
 				send(email, w.ID)
 			}
 		}
