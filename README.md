@@ -8,3 +8,7 @@ An example implementation of job queue with load balancer mechanism. Used [grpc]
 - each worker has limited no of deamon processes (go routines) which will take job parameters from their own worker queue and process and executes job
 
 [build_status]: https://travis-ci.org/lakshanwd/go-job-queue.svg?branch=master "Travis Build Status"
+
+## containerized and scalable
+run `$ docker-compose up --scale worker=2 --scale client=5` to execute this app in containerized environment
+run `$ docker-compose scale worker=3 client=8` to scale app
