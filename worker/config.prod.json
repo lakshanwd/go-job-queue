@@ -1,0 +1,5 @@
+{
+  "address": "server:50051",
+  "max-deamon-count": 20,
+  "max-queue-size": 1000
+}

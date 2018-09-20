@@ -1,0 +1,36 @@
+version: '3.1'
+services:
+  server:
+    container_name: server
+    networks: 
+      - default-network
+    build:
+      context: .
+      dockerfile: server.Dockerfile
+    ports:
+      - 50051:50051
+  
+  worker:
+    networks: 
+      - default-network
+    build:
+      context: .
+      dockerfile: worker.Dockerfile
+    depends_on:
+      - server
+    links:
+      - server
+
+  client:
+    networks:
+      - default-network
+    build:
+      context: .
+      dockerfile: client.Dockerfile
+    depends_on:
+      - server
+    links:
+      - server
+    
+networks: 
+  default-network:

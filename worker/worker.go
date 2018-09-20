@@ -42,6 +42,7 @@ func (w *deamon) start() {
 			select {
 			case email, ok := <-queue:
 				if !ok {
+					//channel has been closed
 					return
 				}
 				send(email, w.ID)
