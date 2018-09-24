@@ -14,18 +14,13 @@ import (
 
 var address string
 var maxDeamonCount int
-var maxQueueSize int
-
 var queue chan *pb.EmailRequest
 var quit chan bool
-var start chan bool
-var mailClient chan pb.MailClient
 
 //config for worker
 type workerConfig struct {
 	Address        string `json:"address"`
 	MaxDeamonCount int    `json:"max-deamon-count"`
-	MaxQueueSize   int    `json:"max-queue-size"`
 }
 
 type deamon struct {
@@ -36,16 +31,17 @@ func newDeamon(id int) *deamon {
 	return &deamon{ID: id}
 }
 
-func (w *deamon) start() {
+func (d *deamon) start(mailClient pb.MailClient, worker *pb.Worker) {
 	go func() {
 		for {
 			select {
 			case email, ok := <-queue:
 				if !ok {
-					//channel has been closed
+					log.Printf("shutting down deamon %v\n", d.ID)
+					quit <- true
 					return
 				}
-				send(email, w.ID)
+				send(email, d.ID)
 			}
 		}
 	}()
@@ -61,61 +57,46 @@ func main() {
 	config := loadConfiguration()
 	address = config.Address
 	maxDeamonCount = config.MaxDeamonCount
-	maxQueueSize = config.MaxQueueSize
 
 	//initialize channels
-	queue = make(chan *pb.EmailRequest, maxQueueSize)
+	queue = make(chan *pb.EmailRequest, maxDeamonCount)
 	quit = make(chan bool)
-	start = make(chan bool)
-	mailClient = make(chan pb.MailClient)
+
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("unable to connect: %v", err.Error())
+	}
+	defer conn.Close()
+	log.Println("connected")
+
+	//initializing server
+	mailClient := pb.NewMailClient(conn)
+	worker := &pb.Worker{WorkerName: os.Args[1]}
+
+	//getting mail requests from server
+	go func() {
+		for {
+			if email, err := mailClient.GetEmail(context.Background(), worker); err != nil {
+				queue <- email
+			} else {
+				quit <- true
+				return
+			}
+		}
+	}()
 
 	//create deamons
 	for i := 0; i < maxDeamonCount; i++ {
 		deamon := newDeamon(i)
-		deamon.start()
+		deamon.start(mailClient, worker)
 	}
 
-	for {
-		// setup a connection to the server.
-		conn, err := grpc.Dial(address, grpc.WithInsecure())
-		if err != nil {
-			log.Fatalf("unable to connect: %v", err.Error())
-		}
-		log.Println("connected")
+	<-quit
+	close(queue)
 
-		//initializing server
-		c := pb.NewMailClient(conn)
-		worker := &pb.Worker{WorkerName: os.Args[1]}
-
-		go func() {
-			//waiting for server to start
-			<-start
-			for {
-				//taking mail from server
-				email, err := c.GetEmail(context.Background(), worker)
-				if err == nil {
-					//put email in queue
-					queue <- email
-					log.Printf("took %v from server", email.GetTitle())
-				} else {
-					//signal server to terminate
-					quit <- true
-					return
-				}
-			}
-		}()
-
-		//signal server to read emails
-		start <- true
-
-		//waiting for signal to quit current connection and attempt to reconnect
+	//waiting for deamons to do their remaining work
+	for i := 0; i < maxDeamonCount; i++ {
 		<-quit
-
-		//existing connection is closing
-		conn.Close()
-
-		//retry connection in 3 seconds
-		time.Sleep(time.Second * 3)
 	}
 }
 
